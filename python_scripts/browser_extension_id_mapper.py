@@ -9,6 +9,7 @@
 
 #imports
 import argparse
+import html
 import urllib.request
 from datetime import datetime
 import os
@@ -65,7 +66,7 @@ def get_to_url(url: str, method: str) -> str:
     try:
         req = urllib.request.Request(url, method=method)
         with urllib.request.urlopen(req) as response:
-            return response.read().decode('utf-8')
+            return html.unescape(response.read().decode('utf-8'))
     except Exception as e:
         return ""
 
