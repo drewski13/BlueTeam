@@ -14,6 +14,7 @@ from datetime import datetime
 import os
 import re
 import json
+import csv
 
 
 #GLOBALS
@@ -97,6 +98,21 @@ def map_chrome_ext_id(ext_id: str) -> dict:
     return {'name': ext_name, 'description': ext_desc}
 
 
+def write_ext_dict_to_csv_file(csv_file: str, ext_dict: dict, local_run: str, browser_type: str):
+    if local_run == 'true':
+        csv_columns = ['user', 'browser type', 'ext_id', 'name', 'description']
+        csv_file = csv_file
+        with open(csv_file, "w", newline='', encoding='utf-8') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+            writer.writeheader()
+            for user, inner_ext_dict in ext_dict.items():
+                if inner_ext_dict is not None:
+                    for ext_id, nd in inner_ext_dict.items():
+                        writer.writerow({'user': user, 'browser type': 'chrome', 'ext_id': ext_id, 'name': nd['name'], 'description': nd['description']})
+                else:
+                    writer.writerow({'user': user, 'browser type': 'chrome', 'ext_id': 'None', 'name': 'N/A',
+                                     'description': 'N/A'})
+
 def local_run(outfile: str):
     # starting with the logic for chrome extension ID mapping. NOTE: a simple urllib request can be used for these
     # dict for mapping local users to their extensions
@@ -116,6 +132,11 @@ def local_run(outfile: str):
     json_output = json.dumps(user_chrome_ext_dict, indent=2)
     print(f"JSON version of output:\n{json_output}")
 
+    #writing output CSV file
+    write_ext_dict_to_csv_file(outfile, user_chrome_ext_dict, 'true', 'chrome')
+
+
+
 
 
 #MAIN
@@ -131,7 +152,7 @@ def main():
     #requiredNamed.add_argument('-f', '--filename', help='arg for the file with the Browser Extension IDs. looking for a flat txt file.')
 
     #list of optional args
-    parser.add_argument('-o', '--outfile', help='arg to tell script where to print CSV output, default is .\\<dateTime>_originalFilename_mapped.csv.')
+    parser.add_argument('-o', '--outfile', help='arg to tell script where to print CSV output. default is .\\<dateTime>_originalFilename_mapped.csv.')
     parser.add_argument('-l', '--local',
                         help='arg to run the script against local machine and users. default is false', default=False, choices=['true', 'false'])
     parser.add_argument('-f', '--filename', help='arg for the file with the Browser Extension IDs. looking for a flat txt file.')
@@ -141,6 +162,8 @@ def main():
     #mapping cmdline args to vars for future use
     local_run_bool = args.local
     ext_file = args.filename
+    if ext_file is None:
+        ext_file = 'local'
     outfile = args.outfile
     if not outfile:
         dt = get_datetime()
